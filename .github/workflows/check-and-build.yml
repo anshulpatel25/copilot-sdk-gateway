@@ -1,0 +1,21 @@
+name: Build and Push Docker Image
+
+permissions:
+  actions: read
+  attestations: write
+  contents: read
+  id-token: write
+  packages: write
+  security-events: write
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  check-and-build:
+    uses: anshulpatel25/workflows/.github/workflows/python.yml@main
+    with:
+      docker-image-name: "copilot-sdk-gateway"

@@ -183,34 +183,6 @@ uv run uvicorn copilot_sdk_gateway.main:create_app \
 
 ---
 
-## Running as a systemd Service
-
-```ini
-# /etc/systemd/system/copilot-sdk-gateway.service
-[Unit]
-Description=copilot-sdk-gateway
-After=network.target
-
-[Service]
-Type=simple
-User=youruser
-WorkingDirectory=/opt/copilot-sdk-gateway
-Environment=GITHUB_TOKEN=ghp_...
-Environment=PORT=11434
-ExecStart=/opt/copilot-sdk-gateway/.venv/bin/copilot-sdk-gateway
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-systemctl daemon-reload
-systemctl enable --now copilot-sdk-gateway
-```
-
----
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
