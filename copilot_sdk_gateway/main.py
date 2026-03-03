@@ -4,7 +4,7 @@ import logging
 
 import uvicorn
 from fastapi import FastAPI
-from prometheus_client import make_asgi_app
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from copilot_sdk_gateway.config import Settings, get_settings
 from copilot_sdk_gateway.routers import chat, generate, models, version
@@ -49,8 +49,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     # Mount Prometheus metrics endpoint
-    metrics_app = make_asgi_app()
-    app.mount("/metrics", metrics_app)
+    instrumentator = Instrumentator()
+    instrumentator.instrument(app).expose(app)
 
     # Override dependency providers
     app.dependency_overrides[models._get_inference] = get_inference

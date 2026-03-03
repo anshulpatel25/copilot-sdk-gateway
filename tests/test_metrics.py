@@ -34,23 +34,23 @@ async def client(app):
 
 
 async def test_metrics_endpoint_available(client):
-    resp = await client.get("/metrics/")
+    resp = await client.get("/metrics")
     assert resp.status_code == 200
     assert "text/plain" in resp.headers["content-type"]
 
 
 async def test_metrics_endpoint_contains_completions_total(client):
-    resp = await client.get("/metrics/")
+    resp = await client.get("/metrics")
     assert "completions_total" in resp.text
 
 
 async def test_metrics_endpoint_contains_prompt_length_chars(client):
-    resp = await client.get("/metrics/")
+    resp = await client.get("/metrics")
     assert "prompt_length_chars" in resp.text
 
 
 async def test_metrics_endpoint_contains_response_length_chars(client):
-    resp = await client.get("/metrics/")
+    resp = await client.get("/metrics")
     assert "response_length_chars" in resp.text
 
 
