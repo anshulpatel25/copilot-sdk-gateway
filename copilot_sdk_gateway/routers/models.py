@@ -5,8 +5,8 @@ from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException
 
-from copilot_sdk_gateway.copilot.inference import CopilotInference
 from copilot_sdk_gateway.models.ollama import Model, ModelDetails, TagsResponse
+from copilot_sdk_gateway.sdk.inference import CopilotInference
 
 logger = logging.getLogger(__name__)
 

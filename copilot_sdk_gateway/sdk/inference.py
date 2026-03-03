@@ -3,7 +3,7 @@
 import logging
 import re
 
-from copilot import CopilotClient
+from copilot import CopilotClient, PermissionHandler
 
 from copilot_sdk_gateway.config import Settings
 from copilot_sdk_gateway.models.ollama import Message
@@ -71,7 +71,10 @@ class CopilotInference:
         try:
             await client.start()
 
-            session_config: dict = {"model": model}
+            session_config: dict = {
+                "model": model,
+                "on_permission_request": PermissionHandler.approve_all,
+            }
             if system_message:
                 session_config["system_message"] = {
                     "mode": "replace",

@@ -11,8 +11,8 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 
 from copilot_sdk_gateway.config import Settings
-from copilot_sdk_gateway.copilot.inference import CopilotInference
 from copilot_sdk_gateway.main import create_app
+from copilot_sdk_gateway.sdk.inference import CopilotInference
 
 
 @pytest.fixture

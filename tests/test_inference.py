@@ -3,8 +3,8 @@
 import pytest
 
 from copilot_sdk_gateway.config import Settings
-from copilot_sdk_gateway.copilot.inference import CopilotInference
 from copilot_sdk_gateway.models.ollama import Message
+from copilot_sdk_gateway.sdk.inference import CopilotInference
 
 
 @pytest.fixture

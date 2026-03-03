@@ -1,14 +1,13 @@
 """Entry point: creates FastAPI app, registers routes, handles lifecycle."""
 
 import logging
-import logging.config
 
 import uvicorn
 from fastapi import FastAPI
 
 from copilot_sdk_gateway.config import Settings, get_settings
-from copilot_sdk_gateway.copilot.inference import CopilotInference
 from copilot_sdk_gateway.routers import chat, generate, models, version
+from copilot_sdk_gateway.sdk.inference import CopilotInference
 
 
 def _configure_logging(log_level: str) -> None:

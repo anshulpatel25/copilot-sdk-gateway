@@ -21,7 +21,7 @@ copilot-sdk-gateway/
 │   ├── models/
 │   │   ├── __init__.py
 │   │   └── ollama.py                ← Pydantic v2 request/response models
-│   ├── copilot/
+│   ├── sdk/
 │   │   ├── __init__.py
 │   │   └── inference.py             ← CopilotInference (SDK wrapper)
 │   └── routers/
@@ -45,7 +45,7 @@ copilot-sdk-gateway/
 |---|---|
 | `config.py` | `Settings` (pydantic-settings) + `get_settings()` cached factory |
 | `models/ollama.py` | Pydantic v2 models for the Ollama wire format |
-| `copilot/inference.py` | `CopilotInference`: wraps `github-copilot-sdk`; per-request client isolation |
+| `sdk/inference.py` | `CopilotInference`: wraps `github-copilot-sdk`; per-request client isolation |
 | `routers/chat.py` | `POST /api/chat`; streaming helper `split_into_chunks` |
 | `routers/generate.py` | `POST /api/generate` |
 | `routers/models.py` | `GET /api/tags` |

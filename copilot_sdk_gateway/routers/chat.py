@@ -7,13 +7,13 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
-from copilot_sdk_gateway.copilot.inference import CopilotInference
 from copilot_sdk_gateway.models.ollama import (
     ChatRequest,
     ChatResponse,
     ErrorResponse,
     Message,
 )
+from copilot_sdk_gateway.sdk.inference import CopilotInference
 
 logger = logging.getLogger(__name__)
 
