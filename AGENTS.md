@@ -2,8 +2,8 @@
 
 ## Project Purpose
 
-`copilot-sdk-gateway` is an **Ollama-compatible HTTP proxy** written in Python.  
-It translates Ollama wire-format requests into GitHub Copilot SDK calls, enabling any Ollama-compatible client (Open WebUI, Continue, Aider, …) to use GitHub Copilot as its LLM backend.
+`copilot-sdk-gateway` is an **OpenAI-API-compatible HTTP proxy** written in Python.  
+It translates Ollama wire-format requests into GitHub Copilot SDK calls, enabling any OpenAI-API-compatible client (Open WebUI, Continue, Aider, …) to use GitHub Copilot as its LLM backend.
 
 ---
 

@@ -30,7 +30,7 @@ RUN curl -fsSL https://gh.io/copilot-install | bash
 
 # Add labels
 LABEL maintainer="Anshul Patel <er.anshul.patel@gmail.com>"
-LABEL description="copilot-sdk-gateway: An Ollama-compatible HTTP proxy backed by GitHub Copilot SDK."
+LABEL description="copilot-sdk-gateway: An OpenAI-API-compatible HTTP proxy backed by GitHub Copilot SDK."
 
 # Expose the API port
 EXPOSE 11434
