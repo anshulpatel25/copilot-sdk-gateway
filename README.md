@@ -1,11 +1,11 @@
 # copilot-sdk-gateway
 
-An **Ollama-compatible HTTP proxy** that forwards inference requests to the GitHub Copilot backend via the [GitHub Copilot Python SDK](https://github.com/github/copilot-sdk).
+An **OpenAI-API-compatible HTTP proxy** that forwards inference requests to the GitHub Copilot backend via the [GitHub Copilot Python SDK](https://github.com/github/copilot-sdk).
 
 ## Architecture
 
 ```
-Ollama-compatible client  (e.g. Open WebUI, Continue, Aider)
+OpenAI-API-compatible client  (e.g. Open WebUI, Continue, Aider)
         │
         ▼  HTTP  (Ollama wire format, port 11434)
 copilot-sdk-gateway
@@ -55,7 +55,7 @@ uv run python -m copilot_sdk_gateway.main
 # → Listening on http://0.0.0.0:11434
 ```
 
-Point any Ollama-compatible client at `http://localhost:11434`.
+Point any OpenAI-API-compatible client at `http://localhost:11434`.
 
 ---
 
@@ -179,34 +179,6 @@ uv run ruff check --fix copilot_sdk_gateway/ tests/
 # Start the server in development mode (auto-reload)
 uv run uvicorn copilot_sdk_gateway.main:create_app \
     --factory --reload --port 11434
-```
-
----
-
-## Running as a systemd Service
-
-```ini
-# /etc/systemd/system/copilot-sdk-gateway.service
-[Unit]
-Description=copilot-sdk-gateway
-After=network.target
-
-[Service]
-Type=simple
-User=youruser
-WorkingDirectory=/opt/copilot-sdk-gateway
-Environment=GITHUB_TOKEN=ghp_...
-Environment=PORT=11434
-ExecStart=/opt/copilot-sdk-gateway/.venv/bin/copilot-sdk-gateway
-Restart=on-failure
-
-[Install]
-WantedBy=multi-user.target
-```
-
-```bash
-systemctl daemon-reload
-systemctl enable --now copilot-sdk-gateway
 ```
 
 ---

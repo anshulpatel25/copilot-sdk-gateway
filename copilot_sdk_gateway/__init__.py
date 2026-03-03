@@ -1,1 +1,1 @@
-"""Ollama-compatible HTTP proxy backed by GitHub Copilot SDK."""
+"""OpenAI-API-compatible HTTP proxy backed by GitHub Copilot SDK."""
