@@ -161,6 +161,81 @@ curl http://localhost:11434/api/generate \
 
 ---
 
+## Observability / Metrics
+
+The gateway exposes a Prometheus scrape endpoint at **`GET /metrics`** (powered by
+[`prometheus-fastapi-instrumentator`](https://github.com/trallnag/prometheus-fastapi-instrumentator)).
+
+### Available metrics
+
+#### Standard HTTP metrics (provided automatically by the instrumentator)
+
+| Metric | Type | Description |
+|---|---|---|
+| `http_requests_total` | Counter | Total HTTP requests by `handler`, `status`, `method` |
+| `http_request_size_bytes` | Summary | Incoming request content-length by `handler` |
+| `http_response_size_bytes` | Summary | Outgoing response content-length by `handler` |
+| `http_request_duration_seconds` | Histogram | Request latency by `handler` and `method` |
+| `http_request_duration_highr_seconds` | Histogram | High-resolution latency (no labels) |
+
+#### Custom business metrics
+
+| Metric | Type | Labels | Description |
+|---|---|---|---|
+| `completions_total` | Counter | `model`, `endpoint` | Successful inference completions |
+| `prompt_length_chars` | Histogram | `endpoint` | Prompt length in characters |
+| `response_length_chars` | Histogram | `endpoint` | Response length in characters |
+
+Metrics are recorded **only on successful completions** — errors do not increment any counter or histogram.
+
+### Scraping with Prometheus
+
+Add a scrape job to your `prometheus.yml`:
+
+```yaml
+scrape_configs:
+  - job_name: copilot-sdk-gateway
+    static_configs:
+      - targets: ["localhost:11434"]
+    metrics_path: /metrics
+```
+
+### Example queries (PromQL)
+
+```promql
+# Completion rate per model over the last 5 minutes
+rate(completions_total[5m])
+
+# 95th-percentile response length per endpoint
+histogram_quantile(0.95, sum by (le, endpoint) (rate(response_length_chars_bucket[5m])))
+
+# Average prompt length per endpoint
+rate(prompt_length_chars_sum[5m]) / rate(prompt_length_chars_count[5m])
+
+# HTTP error rate (5xx) per handler
+sum by (handler) (rate(http_requests_total{status="5xx"}[5m]))
+```
+
+### Verifying locally
+
+```bash
+curl http://localhost:11434/metrics
+```
+
+You should see output like:
+
+```
+# HELP completions_total Total number of successful completions
+# TYPE completions_total counter
+completions_total{endpoint="/api/chat",model="gpt-4o"} 3.0
+# HELP prompt_length_chars Length of prompt in characters
+# TYPE prompt_length_chars histogram
+prompt_length_chars_bucket{endpoint="/api/chat",le="0.005"} 0.0
+...
+```
+
+---
+
 ## Development Setup
 
 ```bash

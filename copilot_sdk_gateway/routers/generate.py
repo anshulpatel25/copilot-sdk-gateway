@@ -7,6 +7,11 @@ from datetime import UTC, datetime
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 
+from copilot_sdk_gateway.metrics import (
+    completions_total,
+    prompt_length_chars,
+    response_length_chars,
+)
 from copilot_sdk_gateway.models.ollama import ErrorResponse, GenerateRequest, GenerateResponse
 from copilot_sdk_gateway.routers.chat import split_into_chunks
 from copilot_sdk_gateway.sdk.inference import CopilotInference
@@ -44,6 +49,10 @@ async def generate(
             status_code=500,
             detail=ErrorResponse(error=str(exc)).model_dump(),
         ) from exc
+
+    completions_total.labels(model=req.model, endpoint="/api/generate").inc()
+    prompt_length_chars.labels(endpoint="/api/generate").observe(len(req.prompt))
+    response_length_chars.labels(endpoint="/api/generate").observe(len(content))
 
     now = datetime.now(tz=UTC)
 
