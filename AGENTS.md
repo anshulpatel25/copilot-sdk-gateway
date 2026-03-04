@@ -18,6 +18,7 @@ copilot-sdk-gateway/
 │   ├── __init__.py
 │   ├── main.py                      ← FastAPI app factory + uvicorn entry point
 │   ├── config.py                    ← pydantic-settings (env-var config)
+│   ├── metrics.py                   ← Prometheus business metrics (Counter + Histogram)
 │   ├── models/
 │   │   ├── __init__.py
 │   │   └── ollama.py                ← Pydantic v2 request/response models
@@ -34,7 +35,8 @@ copilot-sdk-gateway/
     ├── __init__.py
     ├── test_api.py                  ← FastAPI endpoint integration tests (mocked SDK)
     ├── test_chunks.py               ← Unit tests for split_into_chunks
-    └── test_inference.py            ← Unit tests for CopilotInference helpers
+    ├── test_inference.py            ← Unit tests for CopilotInference helpers
+    └── test_metrics.py              ← Integration tests for /metrics endpoint
 ```
 
 ---
@@ -44,13 +46,14 @@ copilot-sdk-gateway/
 | Module | Responsibility |
 |---|---|
 | `config.py` | `Settings` (pydantic-settings) + `get_settings()` cached factory |
+| `metrics.py` | Prometheus business metrics (`completions_total`, `prompt_length_chars`, `response_length_chars`) |
 | `models/ollama.py` | Pydantic v2 models for the Ollama wire format |
 | `sdk/inference.py` | `CopilotInference`: wraps `github-copilot-sdk`; per-request client isolation |
-| `routers/chat.py` | `POST /api/chat`; streaming helper `split_into_chunks` |
-| `routers/generate.py` | `POST /api/generate` |
+| `routers/chat.py` | `POST /api/chat`; streaming helper `split_into_chunks`; records metrics on success |
+| `routers/generate.py` | `POST /api/generate`; records metrics on success |
 | `routers/models.py` | `GET /api/tags` |
 | `routers/version.py` | `GET /api/version` |
-| `main.py` | `create_app()` factory; dependency injection wiring; `main()` entry point |
+| `main.py` | `create_app()` factory; dependency injection wiring; mounts PFI at `/metrics`; `main()` entry point |
 
 ---
 
@@ -90,8 +93,52 @@ copilot-sdk-gateway/
 | `GET` | `/api/tags` | Lists available Copilot models in Ollama format |
 | `POST` | `/api/chat` | Multi-turn chat completion |
 | `POST` | `/api/generate` | Single-turn text generation |
+| `GET` | `/metrics` | Prometheus scrape endpoint (HTTP + business metrics) |
 
 All streaming responses use `StreamingResponse` with `media_type="application/x-ndjson"`.
+
+---
+
+## Prometheus Metrics
+
+Metrics are exposed at `GET /metrics` via [`prometheus-fastapi-instrumentator`](https://github.com/trallnag/prometheus-fastapi-instrumentator).
+
+### Custom business metrics (defined in `metrics.py`)
+
+| Metric | Type | Labels | Recorded when |
+|---|---|---|---|
+| `completions_total` | Counter | `model`, `endpoint` | Successful inference only |
+| `prompt_length_chars` | Histogram | `endpoint` | Successful inference only |
+| `response_length_chars` | Histogram | `endpoint` | Successful inference only |
+
+### Instrumentator wiring (`main.py`)
+
+```python
+from prometheus_fastapi_instrumentator import Instrumentator
+
+instrumentator = Instrumentator()
+instrumentator.instrument(app).expose(app)
+```
+
+This registers the PFI middleware and adds a `GET /metrics` route automatically.  The standard HTTP metrics (request count, latency, sizes) are included out of the box.
+
+### When adding a new endpoint that calls `inference.complete()`
+
+After a successful `inference.complete()` call, record metrics:
+
+```python
+from copilot_sdk_gateway.metrics import (
+    completions_total,
+    prompt_length_chars,
+    response_length_chars,
+)
+
+completions_total.labels(model=req.model, endpoint="/api/my_endpoint").inc()
+prompt_length_chars.labels(endpoint="/api/my_endpoint").observe(len(prompt))
+response_length_chars.labels(endpoint="/api/my_endpoint").observe(len(content))
+```
+
+Do **not** record metrics in error paths — only on successful completion.
 
 ---
 
