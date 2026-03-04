@@ -12,7 +12,7 @@ from httpx import ASGITransport, AsyncClient
 
 from copilot_sdk_gateway.config import Settings
 from copilot_sdk_gateway.main import create_app
-from copilot_sdk_gateway.sdk.inference import CopilotInference
+from copilot_sdk_gateway.sdk.inference import CompletionResult, CopilotInference
 
 
 @pytest.fixture
@@ -73,7 +73,7 @@ async def test_list_models_preserves_existing_tag(client):
 
 async def test_chat_non_streaming(client):
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "Hello there!"
+        mock_c.return_value = CompletionResult(content="Hello there!")
         resp = await client.post(
             "/api/chat",
             json={
@@ -91,7 +91,7 @@ async def test_chat_non_streaming(client):
 
 async def test_chat_streaming(client):
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "hello world"
+        mock_c.return_value = CompletionResult(content="hello world")
         resp = await client.post(
             "/api/chat",
             json={
@@ -144,7 +144,7 @@ async def test_chat_only_system_messages(client):
 
 async def test_chat_with_system_message(client):
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "Sure!"
+        mock_c.return_value = CompletionResult(content="Sure!")
         resp = await client.post(
             "/api/chat",
             json={
@@ -162,13 +162,174 @@ async def test_chat_with_system_message(client):
 
 
 # ---------------------------------------------------------------------------
+# /api/chat — tool calling
+# ---------------------------------------------------------------------------
+
+_WEATHER_TOOL = {
+    "type": "function",
+    "function": {
+        "name": "get_current_weather",
+        "description": "Get the current weather for a location",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {"type": "string", "description": "City name"},
+                "format": {
+                    "type": "string",
+                    "description": "Temperature unit",
+                    "enum": ["celsius", "fahrenheit"],
+                },
+            },
+            "required": ["location", "format"],
+        },
+    },
+}
+
+
+async def test_chat_with_tools_returns_tool_calls(client):
+    """Model responds with tool_calls when tools are provided."""
+    raw_tool_calls = [
+        {
+            "function": {
+                "name": "get_current_weather",
+                "arguments": {"location": "Paris", "format": "celsius"},
+            }
+        }
+    ]
+    with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
+        mock_c.return_value = CompletionResult(content="", tool_calls=raw_tool_calls)
+        resp = await client.post(
+            "/api/chat",
+            json={
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": "What is the weather in Paris?"}],
+                "tools": [_WEATHER_TOOL],
+            },
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["done"] is True
+    assert data["done_reason"] == "stop"
+    assert data["message"]["role"] == "assistant"
+    tool_calls = data["message"]["tool_calls"]
+    assert tool_calls is not None
+    assert len(tool_calls) == 1
+    assert tool_calls[0]["function"]["name"] == "get_current_weather"
+    assert tool_calls[0]["function"]["arguments"]["location"] == "Paris"
+    assert tool_calls[0]["function"]["arguments"]["format"] == "celsius"
+
+
+async def test_chat_with_tools_no_tool_call(client):
+    """Model replies with plain text even when tools are provided."""
+    with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
+        mock_c.return_value = CompletionResult(content="I don't know the weather.")
+        resp = await client.post(
+            "/api/chat",
+            json={
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": "What is the weather in Paris?"}],
+                "tools": [_WEATHER_TOOL],
+            },
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["message"]["content"] == "I don't know the weather."
+    assert data["message"]["tool_calls"] is None
+
+
+async def test_chat_tools_passed_to_inference(client):
+    """Tools are forwarded to CopilotInference.complete()."""
+    with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
+        mock_c.return_value = CompletionResult(content="done")
+        await client.post(
+            "/api/chat",
+            json={
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": "hi"}],
+                "tools": [_WEATHER_TOOL],
+            },
+        )
+
+    call_kwargs = mock_c.call_args.kwargs
+    assert call_kwargs.get("tools") is not None
+    assert len(call_kwargs["tools"]) == 1
+    assert call_kwargs["tools"][0].function.name == "get_current_weather"
+
+
+async def test_chat_streaming_with_tool_calls(client):
+    """Streaming response with tool calls emits a single done chunk."""
+    raw_tool_calls = [
+        {
+            "function": {
+                "name": "get_current_weather",
+                "arguments": {"location": "Berlin", "format": "celsius"},
+            }
+        }
+    ]
+    with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
+        mock_c.return_value = CompletionResult(content="", tool_calls=raw_tool_calls)
+        resp = await client.post(
+            "/api/chat",
+            json={
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": "Weather in Berlin?"}],
+                "tools": [_WEATHER_TOOL],
+                "stream": True,
+            },
+        )
+
+    assert resp.status_code == 200
+    lines = [line for line in resp.text.strip().split("\n") if line]
+    objects = [json.loads(line) for line in lines]
+    assert len(objects) == 1
+    obj = objects[0]
+    assert obj["done"] is True
+    assert obj["message"]["tool_calls"][0]["function"]["name"] == "get_current_weather"
+
+
+async def test_chat_with_tool_result_in_history(client):
+    """Conversation history containing tool results is accepted and forwarded."""
+    with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
+        mock_c.return_value = CompletionResult(content="It is 15°C in Paris.")
+        resp = await client.post(
+            "/api/chat",
+            json={
+                "model": "gpt-4o",
+                "messages": [
+                    {"role": "user", "content": "What is the weather in Paris?"},
+                    {
+                        "role": "assistant",
+                        "content": "",
+                        "tool_calls": [
+                            {
+                                "function": {
+                                    "name": "get_current_weather",
+                                    "arguments": {"location": "Paris", "format": "celsius"},
+                                }
+                            }
+                        ],
+                    },
+                    {"role": "tool", "content": '{"temperature": 15, "unit": "celsius"}'},
+                ],
+                "tools": [_WEATHER_TOOL],
+            },
+        )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["message"]["content"] == "It is 15°C in Paris."
+
+
+# ---------------------------------------------------------------------------
 # /api/generate
 # ---------------------------------------------------------------------------
 
 
 async def test_generate_non_streaming(client):
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "42"
+        mock_c.return_value = CompletionResult(content="42")
         resp = await client.post(
             "/api/generate",
             json={"model": "gpt-4o", "prompt": "What is 6*7?"},
@@ -182,7 +343,7 @@ async def test_generate_non_streaming(client):
 
 async def test_generate_streaming(client):
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "forty two"
+        mock_c.return_value = CompletionResult(content="forty two")
         resp = await client.post(
             "/api/generate",
             json={"model": "gpt-4o", "prompt": "6*7?", "stream": True},
@@ -206,7 +367,7 @@ async def test_generate_missing_prompt(client):
 
 async def test_generate_with_system(client):
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "OK"
+        mock_c.return_value = CompletionResult(content="OK")
         resp = await client.post(
             "/api/generate",
             json={"model": "gpt-4o", "prompt": "Hello", "system": "Be concise."},

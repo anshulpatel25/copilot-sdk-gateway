@@ -42,13 +42,15 @@ async def generate(
         )
 
     try:
-        content = await inference.complete(req.model, req.system, req.prompt)
+        result = await inference.complete(req.model, req.system, req.prompt)
     except Exception as exc:
         logger.error("inference error: %s", exc)
         raise HTTPException(
             status_code=500,
             detail=ErrorResponse(error=str(exc)).model_dump(),
         ) from exc
+
+    content = result.content
 
     completions_total.labels(model=req.model, endpoint="/api/generate").inc()
     prompt_length_chars.labels(endpoint="/api/generate").observe(len(req.prompt))

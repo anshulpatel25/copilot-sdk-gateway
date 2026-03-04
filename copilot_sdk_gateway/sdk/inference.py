@@ -1,14 +1,24 @@
 """GitHub Copilot SDK inference wrapper with per-request client isolation."""
 
+import json
 import logging
 import re
+from dataclasses import dataclass, field
 
 from copilot import CopilotClient, PermissionHandler
 
 from copilot_sdk_gateway.config import Settings
-from copilot_sdk_gateway.models.ollama import Message
+from copilot_sdk_gateway.models.ollama import Message, Tool
 
 logger = logging.getLogger(__name__)
+
+
+@dataclass
+class CompletionResult:
+    """Structured result returned by :meth:`CopilotInference.complete`."""
+
+    content: str
+    tool_calls: list[dict] | None = field(default=None)
 
 
 class CopilotInference:
@@ -31,6 +41,7 @@ class CopilotInference:
 
         Single user message: pass through unchanged.
         Multiple turns: format as a labelled conversation history block.
+        Messages with tool_calls are formatted to include the tool call details.
         """
         if len(messages) == 1:
             return messages[0].content
@@ -38,7 +49,11 @@ class CopilotInference:
         parts: list[str] = []
         for msg in messages:
             label = msg.role.capitalize()
-            parts.append(f"{label}: {msg.content}")
+            if msg.tool_calls:
+                tc_str = json.dumps([tc.model_dump(mode="json") for tc in msg.tool_calls])
+                parts.append(f"{label}: [tool_calls: {tc_str}]")
+            else:
+                parts.append(f"{label}: {msg.content}")
         return "\n".join(parts)
 
     # ------------------------------------------------------------------
@@ -59,10 +74,17 @@ class CopilotInference:
     # Public API
     # ------------------------------------------------------------------
 
-    async def complete(self, model: str, system_message: str, prompt: str) -> str:
+    async def complete(
+        self,
+        model: str,
+        system_message: str,
+        prompt: str,
+        tools: list[Tool] | None = None,
+    ) -> CompletionResult:
         """
         Create a fresh SDK client + session per call (per-request isolation).
-        Returns the assistant response text.
+        Returns a :class:`CompletionResult` with the assistant response text and
+        any tool calls requested by the model.
         """
         model = self.normalize_model(model)
         logger.debug("complete: model=%s prompt_len=%d", model, len(prompt))
@@ -80,13 +102,19 @@ class CopilotInference:
                     "mode": "replace",
                     "content": system_message,
                 }
+            if tools:
+                session_config["tools"] = [t.model_dump(mode="json") for t in tools]
 
             session = await client.create_session(session_config)
             try:
                 event = await session.send_and_wait({"prompt": prompt})
                 if event is None:
-                    return ""
-                return str(event.data.content)
+                    return CompletionResult(content="")
+                content = str(event.data.content)
+                raw = getattr(event.data, "tool_calls", None)
+                # Treat empty list the same as no tool calls
+                raw_tool_calls = raw if raw else None
+                return CompletionResult(content=content, tool_calls=raw_tool_calls)
             finally:
                 await session.destroy()
         finally:

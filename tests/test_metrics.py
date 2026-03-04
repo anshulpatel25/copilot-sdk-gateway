@@ -12,7 +12,7 @@ from copilot_sdk_gateway.metrics import (
     prompt_length_chars,
     response_length_chars,
 )
-from copilot_sdk_gateway.sdk.inference import CopilotInference
+from copilot_sdk_gateway.sdk.inference import CompletionResult, CopilotInference
 
 
 @pytest.fixture
@@ -62,7 +62,7 @@ async def test_metrics_endpoint_contains_response_length_chars(client):
 async def test_chat_increments_completions_total(client):
     before = completions_total.labels(model="gpt-4o", endpoint="/api/chat")._value.get()
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "Hello!"
+        mock_c.return_value = CompletionResult(content="Hello!")
         resp = await client.post(
             "/api/chat",
             json={"model": "gpt-4o", "messages": [{"role": "user", "content": "Hi"}]},
@@ -77,7 +77,7 @@ async def test_generate_increments_completions_total(client):
         model="gpt-4o", endpoint="/api/generate"
     )._value.get()
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "42"
+        mock_c.return_value = CompletionResult(content="42")
         resp = await client.post(
             "/api/generate",
             json={"model": "gpt-4o", "prompt": "What is 6*7?"},
@@ -112,7 +112,7 @@ async def test_chat_observes_prompt_and_response_length(client):
     response_before = response_length_chars.labels(endpoint="/api/chat")._sum.get()
 
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "Sure!"
+        mock_c.return_value = CompletionResult(content="Sure!")
         await client.post(
             "/api/chat",
             json={"model": "gpt-4o", "messages": [{"role": "user", "content": "Hello"}]},
@@ -131,7 +131,7 @@ async def test_generate_observes_prompt_and_response_length(client):
     response_before = response_length_chars.labels(endpoint="/api/generate")._sum.get()
 
     with patch.object(CopilotInference, "complete", new_callable=AsyncMock) as mock_c:
-        mock_c.return_value = "42"
+        mock_c.return_value = CompletionResult(content="42")
         await client.post(
             "/api/generate",
             json={"model": "gpt-4o", "prompt": "What is 6*7?"},

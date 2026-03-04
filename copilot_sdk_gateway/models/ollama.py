@@ -1,19 +1,62 @@
 """Pydantic v2 models matching the Ollama wire format."""
 
 from datetime import datetime
+from typing import Any
 
 from pydantic import BaseModel
+
+# ---------------------------------------------------------------------------
+# Tool definitions (used in ChatRequest.tools)
+# ---------------------------------------------------------------------------
+
+
+class ToolFunctionParameters(BaseModel):
+    type: str = "object"
+    properties: dict[str, Any] = {}
+    required: list[str] = []
+
+
+class ToolFunction(BaseModel):
+    name: str
+    description: str = ""
+    parameters: ToolFunctionParameters = ToolFunctionParameters()
+
+
+class Tool(BaseModel):
+    type: str = "function"
+    function: ToolFunction
+
+
+# ---------------------------------------------------------------------------
+# Tool calls (used in Message.tool_calls)
+# ---------------------------------------------------------------------------
+
+
+class ToolCallFunction(BaseModel):
+    name: str
+    arguments: dict[str, Any] = {}
+
+
+class ToolCall(BaseModel):
+    function: ToolCallFunction
+
+
+# ---------------------------------------------------------------------------
+# Messages and requests
+# ---------------------------------------------------------------------------
 
 
 class Message(BaseModel):
     role: str
-    content: str
+    content: str = ""  # May be empty when tool_calls are present
+    tool_calls: list[ToolCall] | None = None
 
 
 class ChatRequest(BaseModel):
     model: str
     messages: list[Message]
     stream: bool = False
+    tools: list[Tool] | None = None
 
 
 class ChatResponse(BaseModel):

@@ -17,6 +17,8 @@ from copilot_sdk_gateway.models.ollama import (
     ChatResponse,
     ErrorResponse,
     Message,
+    ToolCall,
+    ToolCallFunction,
 )
 from copilot_sdk_gateway.sdk.inference import CopilotInference
 
@@ -49,6 +51,22 @@ def _split_messages(messages: list[Message]) -> tuple[str, list[Message]]:
     return "\n".join(system_parts), conversation
 
 
+def _build_tool_calls(raw: list[dict]) -> list[ToolCall]:
+    """Convert raw SDK tool-call dicts into Ollama :class:`ToolCall` objects."""
+    result: list[ToolCall] = []
+    for item in raw:
+        fn = item.get("function", {})
+        result.append(
+            ToolCall(
+                function=ToolCallFunction(
+                    name=fn.get("name", ""),
+                    arguments=fn.get("arguments", {}),
+                )
+            )
+        )
+    return result
+
+
 @router.post("/api/chat")
 async def chat(
     req: ChatRequest,
@@ -78,13 +96,16 @@ async def chat(
     prompt = inference.build_prompt_from_messages(conversation)
 
     try:
-        content = await inference.complete(req.model, system_message, prompt)
+        result = await inference.complete(req.model, system_message, prompt, tools=req.tools)
     except Exception as exc:
         logger.error("inference error: %s", exc)
         raise HTTPException(
             status_code=500,
             detail=ErrorResponse(error=str(exc)).model_dump(),
         ) from exc
+
+    content = result.content
+    tool_calls = _build_tool_calls(result.tool_calls) if result.tool_calls else None
 
     completions_total.labels(model=req.model, endpoint="/api/chat").inc()
     prompt_length_chars.labels(endpoint="/api/chat").observe(len(prompt))
@@ -96,7 +117,7 @@ async def chat(
         return ChatResponse(
             model=req.model,
             created_at=now,
-            message=Message(role="assistant", content=content),
+            message=Message(role="assistant", content=content, tool_calls=tool_calls),
             done=True,
             done_reason="stop",
         )
@@ -105,6 +126,18 @@ async def chat(
     chunks = split_into_chunks(content)
 
     async def stream_chunks():
+        # If the response contains tool calls, emit a single chunk with them
+        if tool_calls:
+            resp = ChatResponse(
+                model=req.model,
+                created_at=datetime.now(tz=UTC),
+                message=Message(role="assistant", content=content, tool_calls=tool_calls),
+                done=True,
+                done_reason="stop",
+            )
+            yield json.dumps(resp.model_dump(mode="json")) + "\n"
+            return
+
         for chunk in chunks:
             resp = ChatResponse(
                 model=req.model,
