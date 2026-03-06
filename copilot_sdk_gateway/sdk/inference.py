@@ -83,7 +83,9 @@ class CopilotInference:
 
             session = await client.create_session(session_config)
             try:
-                event = await session.send_and_wait({"prompt": prompt})
+                event = await session.send_and_wait(
+                    {"prompt": prompt}, timeout=self._settings.inference_timeout
+                )
                 if event is None:
                     return ""
                 return str(event.data.content)
