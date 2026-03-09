@@ -56,6 +56,11 @@ class TestInferenceTimeout:
         settings = Settings(inference_timeout=120.0)
         assert settings.inference_timeout == 120.0
 
+    def test_inference_timeout_from_env(self, monkeypatch):
+        monkeypatch.setenv("INFERENCE_TIMEOUT", "450.0")
+        settings = Settings()
+        assert settings.inference_timeout == 450.0
+
     async def test_complete_passes_timeout_to_send_and_wait(self):
         settings = Settings(inference_timeout=120.0)
         inference = CopilotInference(settings)

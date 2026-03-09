@@ -175,6 +175,9 @@ export LOG_LEVEL=debug
 
 # Or with a token:
 export GITHUB_TOKEN=ghp_...
+
+# Increase timeout for slow or long-running models (default: 300s):
+export INFERENCE_TIMEOUT=600
 ```
 
 ---

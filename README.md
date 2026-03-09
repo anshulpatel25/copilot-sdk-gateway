@@ -70,6 +70,7 @@ All settings are read from environment variables (and optionally from a `.env` f
 | `COPILOT_CLI_PATH` | `""` | Absolute path to the `copilot` binary; empty = locate on `PATH` |
 | `COPILOT_CLI_URL` | `""` | Connect to an already-running CLI server (`host:port`); when set, `COPILOT_CLI_PATH` is ignored |
 | `LOG_LEVEL` | `error` | Logging verbosity (`debug`, `info`, `warning`, `error`) |
+| `INFERENCE_TIMEOUT` | `300.0` | Seconds to wait for the Copilot session to become idle before raising a `TimeoutError`; increase for slow or long-running models |
 
 ---
 
