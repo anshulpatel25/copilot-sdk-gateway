@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     copilot_cli_path: str = ""
     copilot_cli_url: str = ""
     log_level: str = "error"
+    inference_timeout: float = 300.0
 
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
