@@ -120,19 +120,19 @@ wheels = [
 
 [[package]]
 name = "github-copilot-sdk"
-version = "0.1.29"
+version = "0.1.32"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pydantic" },
     { name = "python-dateutil" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/11/8e/2155e40594a60084266d33cefd2333fe3ce44e7189773e6eff9943e25d81/github_copilot_sdk-0.1.29-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:0215045cf6ec2cebfc6dbb0e257e2116d4aa05751f80cc48d5f3c8c658933094", size = 58182462, upload-time = "2026-02-27T22:09:59.687Z" },
-    { url = "https://files.pythonhosted.org/packages/55/6a/9fa577564702eb1eb143c16afcdadf7d6305da53fbbd05a0925035808d9e/github_copilot_sdk-0.1.29-py3-none-macosx_11_0_arm64.whl", hash = "sha256:441c917aad8501da5264026b0da5c0e834571256e812617437654ab16bdad77f", size = 54934772, upload-time = "2026-02-27T22:10:02.911Z" },
-    { url = "https://files.pythonhosted.org/packages/69/77/0e0fd6f6a0177d93f5f3e5d0e9ed5044fc53c54e58e65bbc6b08eb789350/github_copilot_sdk-0.1.29-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:88230b779dee1695fc44043060006224138c5b5d6724890f7ecdc378ff0d8f73", size = 61071028, upload-time = "2026-02-27T22:10:06.332Z" },
-    { url = "https://files.pythonhosted.org/packages/94/f5/9a73bd6e34db4d0ce546b04725cfad1c9fa58426265876b640376381b623/github_copilot_sdk-0.1.29-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:2019bbbaea39d8db54250d11431d89952dd0ad0a16b58159b6b018ea625c78c9", size = 59251702, upload-time = "2026-02-27T22:10:09.466Z" },
-    { url = "https://files.pythonhosted.org/packages/ea/32/60713b1ae3ed80b62113f993bd2f4552d2b03753cfea37f90086ac8e6d6e/github_copilot_sdk-0.1.29-py3-none-win_amd64.whl", hash = "sha256:a326fe5ab6ecd7cef5de39d5a5fe18e09e629eb29b401be23a709e83fc578578", size = 53690857, upload-time = "2026-02-27T22:10:12.778Z" },
-    { url = "https://files.pythonhosted.org/packages/58/31/d082f4ac13cf3e4ba3a7846b8468521d6d38967de3788a61b6001707fbb5/github_copilot_sdk-0.1.29-py3-none-win_arm64.whl", hash = "sha256:1ace40f23ab8d8c97f8d61d31d01946ade9c83ea7982671864ec5aef0cd7dd01", size = 51699152, upload-time = "2026-02-27T22:10:15.791Z" },
+    { url = "https://files.pythonhosted.org/packages/cd/67/ebd002c14fe7d2640d0fff47a0b29fdb21ed239b597afa2d2c6f6cfebb0b/github_copilot_sdk-0.1.32-py3-none-macosx_10_9_x86_64.whl", hash = "sha256:d97bc39fbd4b51e0aea3405299da1e643838ddbf6bff284f688a2d8c20d82ff8", size = 58576987, upload-time = "2026-03-07T15:28:24.062Z" },
+    { url = "https://files.pythonhosted.org/packages/a5/50/add440f61e19f5b7e6989c89c5cefcb14c23f06627621e7c3a15a1f75e5d/github_copilot_sdk-0.1.32-py3-none-macosx_11_0_arm64.whl", hash = "sha256:8098592f34e7ee7decbcbb7615c7eb924471e65a3e4d0d93bc49b0d112f8ec51", size = 55328145, upload-time = "2026-03-07T15:28:28.395Z" },
+    { url = "https://files.pythonhosted.org/packages/f9/b8/c3ca0678b21d8a0dd8fe3aa8fad4b7ec5f22cbe9d5fb3a11f82df4f40578/github_copilot_sdk-0.1.32-py3-none-manylinux_2_28_aarch64.whl", hash = "sha256:c20cae4bec3584ce007a65a363216a1f98a71428a3ca3b76622f9e556307eed2", size = 61456678, upload-time = "2026-03-07T15:28:32.646Z" },
+    { url = "https://files.pythonhosted.org/packages/21/5c/bdfe177353f88d44da9600c3ec478e2b0df7a838901947b168e869ba5ad7/github_copilot_sdk-0.1.32-py3-none-manylinux_2_28_x86_64.whl", hash = "sha256:0941fd445e97a9b13fb713086c4a8c09c20ec8c7ab854cf009bd7cc213488999", size = 59641536, upload-time = "2026-03-07T15:28:36.977Z" },
+    { url = "https://files.pythonhosted.org/packages/1e/d0/2f3a07c74ecd24587b8f7d26729738f73e63f3341bf4bdc9eb2bb73ddaaf/github_copilot_sdk-0.1.32-py3-none-win_amd64.whl", hash = "sha256:37a82ff0908e01512052b69df4aa498332fa5769999635425015ed43cd850622", size = 54077464, upload-time = "2026-03-07T15:28:41.34Z" },
+    { url = "https://files.pythonhosted.org/packages/1c/76/292088d6ccf2daf8bcb8a94b22b4f16005a6772087896f1b43c4f0d5edaa/github_copilot_sdk-0.1.32-py3-none-win_arm64.whl", hash = "sha256:3199c99604e8d393b1d60905be80b84da44e70d16d30b92e2ae9b92814cdc4ae", size = 52083845, upload-time = "2026-03-07T15:28:45.092Z" },
 ]
 
 [[package]]
