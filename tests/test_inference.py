@@ -82,5 +82,5 @@ class TestInferenceTimeout:
 
         assert result == "response text"
         mock_session.send_and_wait.assert_awaited_once_with(
-            {"prompt": "Hello"}, timeout=120.0
+            "Hello", timeout=120.0
         )

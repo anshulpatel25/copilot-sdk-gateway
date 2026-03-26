@@ -4,6 +4,7 @@ import logging
 import re
 
 from copilot import CopilotClient, PermissionHandler
+from copilot.types import ExternalServerConfig, SubprocessConfig, SystemMessageReplaceConfig
 
 from copilot_sdk_gateway.config import Settings
 from copilot_sdk_gateway.models.ollama import Message
@@ -45,15 +46,19 @@ class CopilotInference:
     # Client factory
     # ------------------------------------------------------------------
 
-    def _build_client_options(self) -> dict:
-        opts: dict = {"log_level": self._settings.log_level}
-        if self._settings.github_token:
-            opts["github_token"] = self._settings.github_token
+    def _build_client_config(self) -> SubprocessConfig | ExternalServerConfig:
+        """Build SDK client config from settings."""
         if self._settings.copilot_cli_url:
-            opts["cli_url"] = self._settings.copilot_cli_url
-        elif self._settings.copilot_cli_path:
-            opts["cli_path"] = self._settings.copilot_cli_path
-        return opts
+            return ExternalServerConfig(url=self._settings.copilot_cli_url)
+
+        # SubprocessConfig (default)
+        cli_path = self._settings.copilot_cli_path or None
+        github_token = self._settings.github_token or None
+        return SubprocessConfig(
+            cli_path=cli_path,
+            github_token=github_token,
+            log_level=self._settings.log_level,
+        )
 
     # ------------------------------------------------------------------
     # Public API
@@ -67,7 +72,8 @@ class CopilotInference:
         model = self.normalize_model(model)
         logger.debug("complete: model=%s prompt_len=%d", model, len(prompt))
 
-        client = CopilotClient(self._build_client_options())
+        config = self._build_client_config()
+        client = CopilotClient(config, auto_start=False)
         try:
             await client.start()
 
@@ -76,15 +82,14 @@ class CopilotInference:
                 "on_permission_request": PermissionHandler.approve_all,
             }
             if system_message:
-                session_config["system_message"] = {
-                    "mode": "replace",
-                    "content": system_message,
-                }
+                session_config["system_message"] = SystemMessageReplaceConfig(
+                    content=system_message
+                )
 
-            session = await client.create_session(session_config)
+            session = await client.create_session(**session_config)
             try:
                 event = await session.send_and_wait(
-                    {"prompt": prompt}, timeout=self._settings.inference_timeout
+                    prompt, timeout=self._settings.inference_timeout
                 )
                 if event is None:
                     return ""
@@ -96,7 +101,8 @@ class CopilotInference:
 
     async def list_models(self) -> list[str]:
         """Create a fresh SDK client, call list_models(), return model IDs."""
-        client = CopilotClient(self._build_client_options())
+        config = self._build_client_config()
+        client = CopilotClient(config, auto_start=False)
         try:
             await client.start()
             models = await client.list_models()
