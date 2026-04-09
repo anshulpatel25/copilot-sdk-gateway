@@ -3,13 +3,18 @@
 import logging
 import re
 
-from copilot import CopilotClient, PermissionHandler
-from copilot.types import ExternalServerConfig, SubprocessConfig, SystemMessageReplaceConfig
+from copilot import CopilotClient, ExternalServerConfig, SubprocessConfig
+from copilot.session import PermissionRequest, PermissionRequestResult, SystemMessageReplaceConfig
 
 from copilot_sdk_gateway.config import Settings
 from copilot_sdk_gateway.models.ollama import Message
 
 logger = logging.getLogger(__name__)
+
+
+def _approve_all(request: PermissionRequest, context: dict[str, str]) -> PermissionRequestResult:
+    """Auto-approve all permission requests (non-interactive gateway use)."""
+    return PermissionRequestResult(kind="approved")
 
 
 class CopilotInference:
@@ -79,7 +84,7 @@ class CopilotInference:
 
             session_config: dict = {
                 "model": model,
-                "on_permission_request": PermissionHandler.approve_all,
+                "on_permission_request": _approve_all,
             }
             if system_message:
                 session_config["system_message"] = SystemMessageReplaceConfig(
