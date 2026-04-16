@@ -5,8 +5,8 @@ description = "OpenAI-API-compatible HTTP proxy backed by GitHub Copilot SDK"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",
+    "pydantic>=2.13.0",
     "uvicorn[standard]>=0.44.0",
-    "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "github-copilot-sdk>=0.1",
     "prometheus-fastapi-instrumentator>=7.1",
