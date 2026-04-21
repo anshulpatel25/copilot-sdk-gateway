@@ -1,4 +1,4 @@
-FROM python:3.14.4-slim-trixie
+FROM python:3.15.0a8-slim-trixie
 
 # Update and upgrade system packages, then clean cache to minimize image size
 RUN apt-get update && \
