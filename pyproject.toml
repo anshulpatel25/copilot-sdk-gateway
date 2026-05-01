@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "OpenAI-API-compatible HTTP proxy backed by GitHub Copilot SDK"
 requires-python = ">=3.12"
 dependencies = [
-    "fastapi>=0.136.0",
+    "fastapi>=0.136.1",
     "pydantic>=2.13.3",
     "uvicorn[standard]>=0.44.0",
     "pydantic-settings>=2.14.0",
