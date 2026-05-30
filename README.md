@@ -1,4 +1,11 @@
-# copilot-sdk-gateway
+# ⚠️ ARCHIVED: copilot-sdk-gateway
+
+> [!IMPORTANT]
+> This project is now **archived** and no longer maintained.
+>
+> One of the primary motivations for building `copilot-sdk-gateway` was to take advantage of GitHub Copilot's "always free" requests feature. However, GitHub has announced that Copilot is moving to **usage-based billing** starting June 1, 2026. In this new model, "always free" requests are no longer available, making it no longer viable or necessary to maintain this project.
+>
+> For more information, please refer to the official announcement: [GitHub Copilot is moving to usage-based billing](https://github.blog/news-insights/company-news/github-copilot-is-moving-to-usage-based-billing/).
 
 An **OpenAI-API-compatible HTTP proxy** that forwards inference requests to the GitHub Copilot backend via the [GitHub Copilot Python SDK](https://github.com/github/copilot-sdk).
 
